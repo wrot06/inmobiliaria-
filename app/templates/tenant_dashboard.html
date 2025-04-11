@@ -1,61 +1,100 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Dashboard Visitante</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <title>Dashboard Inquilino</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 h-screen flex">
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white shadow-md p-6 hidden md:block">
-        <h2 class="text-xl font-bold text-blue-600 mb-6">🏢 Inmobiliaria</h2>
-        <nav class="space-y-4">
-            {% if role == "Owner" %}
-                <a href="#" class="block text-gray-700 hover:text-blue-500">🏠 Propiedades</a>
-                <a href="#" class="block text-gray-700 hover:text-blue-500">📅 Reservas</a>
-                <a href="#" class="block text-gray-700 hover:text-blue-500">💰 Pagos</a>
-            {% elif role == "Tenant" %}
-                <a href="#" class="block text-gray-700 hover:text-blue-500">📄 Mis Contratos</a>
-                <a href="#" class="block text-gray-700 hover:text-blue-500">🏘 Propiedades en arriendo</a>
-                <a href="#" class="block text-gray-700 hover:text-blue-500">💳 Mis Pagos</a>
-            {% endif %}
-        </nav>
-        
-    </aside>
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white shadow-md p-6">
+    <h2 class="text-xl font-bold text-blue-600 mb-6">🏢 Inmobiliaria</h2>
+    <nav class="space-y-4">
 
-    <!-- Main content -->
-    <div class="flex-1 flex flex-col">
+        <a href="#" class="block text-gray-700 hover:text-blue-500">📄 Mis Contratos</a>
+        <a href="#" class="block text-gray-700 hover:text-blue-500">🏨 Propiedades en arriendo</a>
+        <a href="#" class="block text-gray-700 hover:text-blue-500">💳 Mis Pagos</a>
 
-        <!-- Header -->
-        <header class="bg-white shadow flex items-center justify-between px-6 py-4">
-            <h1 class="text-xl font-semibold text-gray-700">Panel de control</h1>
+    </nav>
+  </aside>
 
-            <div class="flex items-center space-x-4">
-                <div class="flex items-center space-x-2">
-                    <span class="text-gray-600 font-medium">
-                        {{ user_name }} <span class="text-sm text-gray-400">({{ role_display }})</span>
-                    </span>
-                    <img src="{{ url_for('static', filename='img/user.jpg') }}" alt="User" class="w-10 h-10 rounded-full object-cover border">
-                </div>
-                <!-- Botón salir -->
-                <form action="{{ url_for('main.logout') }}" method="POST">
-                    <button type="submit"
-                            class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-all text-sm">
-                        Salir
-                    </button>
-                </form>
+  <!-- Main content -->
+  <div class="flex-1 flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow flex items-center justify-between px-6 py-4">
+      <h1 class="text-xl font-semibold text-gray-700">Panel de control</h1>
+
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2">
+          <span class="text-gray-600 font-medium">
+            {{ user_name }} <span class="text-sm text-gray-400">({{ role_display }})</span>
+          </span>
+          <img src="{{ url_for('static', filename='img/user.jpg') }}" alt="User" class="w-10 h-10 rounded-full object-cover border">
+        </div>
+        <!-- Botón salir -->
+        <form action="{{ url_for('main.logout') }}" method="POST">
+          <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-all text-sm">
+            Salir
+          </button>
+        </form>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-6 overflow-auto space-y-6">
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-800">Bienvenido, {{ user_name }} 👋</h2>
+        <p class="text-gray-600 mt-2">Aquí podrás administrar tus propiedades, reservas, clientes y más.</p>
+      </div>
+
+      <h1 class="text-xl font-semibold mb-4">Propiedades</h1>
+
+      <!-- Filtros de búsqueda -->
+      <form method="GET" action="{{ url_for('main.tenant_dashboard') }}" class="flex space-x-4 mb-6">
+        <select name="type" class="px-4 py-2 border rounded-md" onchange="this.form.submit()">
+          <option value="" disabled selected>Tipo de propiedad</option>
+          {% for type in property_types %}
+            <option value="{{ type }}" {% if type == request.args.get('type') %}selected{% endif %}>{{ type }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="city" class="px-4 py-2 border rounded-md" onchange="this.form.submit()">
+          <option value="" disabled selected>Ciudad</option>
+          {% for city in cities %}
+            <option value="{{ city }}" {% if city == request.args.get('city') %}selected{% endif %}>{{ city }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="price" class="px-4 py-2 border rounded-md" onchange="this.form.submit()">
+          <option value="" disabled selected>Precio</option>
+          {% for price in price_ranges %}
+            <option value="{{ price }}" {% if price == request.args.get('price') %}selected{% endif %}>Hasta ${{ price }}</option>
+          {% endfor %}
+        </select>
+
+        <!-- Botón para borrar filtros -->
+        <button type="reset" class="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500" onclick="window.location.href='{{ url_for('main.tenant_dashboard') }}'">Borrar Filtros</button>
+      </form>
+
+      <!-- Mostrar propiedades filtradas -->
+      {% if propiedades %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {% for property in propiedades %}
+            <div class="bg-white shadow-lg p-4 rounded-lg">
+              <p class="text-xl font-semibold">{{ property.type }} en {{ property.city }}</p>
+              <p class="text-gray-600">Precio: ${{ property.price }}</p>
+              <p class="text-sm text-gray-500">{{ property.address }}</p>
+              <p class="text-sm text-gray-500">{{ property.description }}</p>
+              <a href="{{ url_for('main.property_detail', property_id=property.id) }}" class="text-blue-600 hover:text-blue-800 mt-2 inline-block">Ver detalles</a>
             </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="p-6 overflow-auto">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-lg font-semibold text-gray-800">Bienvenido, {{ user_name }} 👋</h2>
-                <p class="text-gray-600 mt-2">Aquí podrás administrar tus propiedades, reservas, clientes y más.</p>
-            </div>
-        </main>
-    </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>No hay propiedades que coincidan con tu búsqueda.</p>
+      {% endif %}
+    </main>
+  </div>
 
 </body>
 </html>

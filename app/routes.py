@@ -207,16 +207,81 @@ def owner_create_property():
 # -------------------------------------------------------------------
 # RUTA PARA EL DASHBOARD DEL INQUILINO
 
-@main.route('/dashboard/tenant')
+@main.route('/dashboard/tenant', methods=['GET'])
 def tenant_dashboard():
     if 'token' not in session or session.get('role') != 'Tenant':
         flash("Acceso denegado. Debes ser un inquilino.", "error")
         return redirect(url_for('main.login'))
-    # En este ejemplo se usa 'user_name' para inquilinos
-    return render_template('tenant_dashboard.html', user_name=session.get('user_name'))
+    
+    # Obtener los filtros de búsqueda desde los parámetros de la URL
+    type_filter = request.args.get('type', default='', type=str)
+    city_filter = request.args.get('city', default='', type=str)
+    price_filter = request.args.get('price', default='', type=str)
+    
+    # Obtener los tipos de propiedad y ciudades disponibles
+    property_types = db.session.query(Property.type).distinct().all()
+    cities = db.session.query(Property.city).distinct().all()
+    
+    # Obtener el precio mínimo y máximo
+    min_price = db.session.query(db.func.min(Property.price)).scalar()
+    max_price = db.session.query(db.func.max(Property.price)).scalar()
+    
+    # Calcular los tres rangos de precio
+    price_ranges = [
+        round(min_price, -6),
+        round(min_price + (max_price - min_price) / 3, -6),
+        round(max_price, -6)
+    ]
+    
+    # Iniciar la consulta de propiedades sin filtros
+    query = Property.query.filter(Property.ownerId != session.get('user_id'))  # Mostrar solo propiedades disponibles para inquilinos
+
+    # Aplicar filtros si están presentes
+    if type_filter:
+        query = query.filter(Property.type.ilike(f"%{type_filter}%"))
+    if city_filter:
+        query = query.filter(Property.city.ilike(f"%{city_filter}%"))
+    if price_filter:
+        query = query.filter(Property.price <= float(price_filter))
+
+    # Obtener las propiedades filtradas
+    propiedades = query.all()
+
+    # Si no se aplica ningún filtro, se mostrarán todas las propiedades
+    if not type_filter and not city_filter and not price_filter:
+        propiedades = Property.query.filter(Property.ownerId != session.get('user_id')).all()
+
+    return render_template('tenant_dashboard.html',
+                           user_name=session.get('user_name'),
+                           role_display="Inquilino",
+                           property_types=[type[0] for type in property_types],
+                           cities=[city[0] for city in cities],
+                           price_ranges=price_ranges,
+                           propiedades=propiedades)
+
+
+
+
+
 
 # -------------------------------------------------------------------
+@main.route('/search', methods=['GET'])
+def search_inmuebles():
+    ciudad = request.args.get('ciudad')
+    tipo = request.args.get('tipo')
+    precio_min = request.args.get('precio_min', type=float)
+    precio_max = request.args.get('precio_max', type=float)
 
+    # Llamar a la API para obtener los inmuebles filtrados
+    response = requests.get('https://url_de_tu_api/inmuebles', params={
+        'ciudad': ciudad,
+        'tipo': tipo,
+        'precio_min': precio_min,
+        'precio_max': precio_max
+    })
+
+    inmuebles = response.json()  # Suponiendo que la API devuelve los inmuebles en formato JSON
+    return render_template('search_results.html', inmuebles=inmuebles)
 
 # -------------------------------------------------------------------
 # RUTA DE REGISTRO DE USUARIO
