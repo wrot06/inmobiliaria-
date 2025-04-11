@@ -1,5 +1,6 @@
 import json
-from flask import Blueprint, render_template, session, redirect, url_for, flash, request
+from flask import Blueprint, render_template, session, redirect, url_for, flash, request, current_app
+from werkzeug.utils import secure_filename  # Import secure_filename for file handling
 from app import db
 from app.models import Property  # Importamos el modelo de la propiedad
 
@@ -25,9 +26,54 @@ from datetime import datetime
 
 # Se define el blueprint para agrupar las rutas
 main = Blueprint('main', __name__)
+# Define allowed extensions for file uploads
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+# Verifica si la extensión de la imagen es válida
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # URL base de la API (reemplaza por la URL correcta)
 API_BASE_URL = "https://rent4all-geb3etamc4dub9eu.canadacentral-01.azurewebsites.net/api"
+
+
+@main.route('/upload_image/<int:property_id>', methods=['GET', 'POST'])
+def upload_image(property_id):
+    property = Property.query.get_or_404(property_id)
+
+    if request.method == 'POST':
+        # Verifica si hay un archivo en la solicitud
+        if 'image' not in request.files:
+            flash('No se seleccionó ninguna imagen.', 'error')
+            return redirect(url_for('main.owner_dashboard'))
+
+        image = request.files['image']
+
+        # Si el archivo tiene un nombre válido
+        if image and allowed_file(image.filename):
+            filename = f"{property.id}.jpg"  # Renombrar la imagen con el ID de la propiedad
+            file_path = os.path.join('static', 'uploads', filename)
+
+            # Crea la carpeta si no existe
+            if not os.path.exists('static/uploads'):
+                os.makedirs('static/uploads')
+
+            # Guarda la imagen en el directorio especificado
+            image.save(file_path)
+
+            # Actualiza la propiedad con la ruta de la imagen
+            property.image = f'uploads/{filename}'  # Guarda solo la ruta relativa
+            db.session.commit()
+
+            flash('Imagen subida con éxito.', 'success')
+            return redirect(url_for('main.owner_dashboard'))
+
+        flash('Tipo de archivo no permitido. Por favor sube una imagen válida.', 'error')
+
+    return redirect(url_for('main.owner_dashboard'))
+
+
 
 
 

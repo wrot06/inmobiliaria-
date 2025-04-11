@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from config import Config
+import os
 
 # Inicializa las extensiones
 db = SQLAlchemy()
@@ -18,5 +19,8 @@ def create_app():
     # Aquí se registran los blueprints, como siempre
     from .routes import main
     app.register_blueprint(main)
+
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads')
+
 
     return app

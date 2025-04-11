@@ -50,31 +50,50 @@
                 <h2 class="text-lg font-semibold text-gray-800">Bienvenido, {{ user_name }} 👋</h2>
                 <p class="text-gray-600 mt-2">Aquí podrás administrar tus propiedades, solicitudes y pagos.</p>
             </div>
-
+        
             <h2 class="text-2xl font-semibold text-gray-800">Tus Propiedades</h2>
-
+        
             {% if propiedades %}
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {% for property in propiedades %}
                         <div class="bg-white p-4 rounded-lg shadow-md hover:shadow-xl transition-all">
-                            <!-- Imágen de la propiedad -->
-                            {% if property.photos %}
-                                <img src="{{ property.photos[0].url }}" alt="Foto de la propiedad" class="w-full h-48 object-cover rounded-md mb-4">
+                            <!-- Imagen de la propiedad -->
+                            {% if property.id %}
+                                <img src="{{ url_for('static', filename='uploads/' + property.id|string + '.jpg') }}" alt="Imagen de la propiedad" class="w-full h-48 object-cover rounded-md mb-4" onerror="this.style.display='none';">
                             {% else %}
-                                <div class="w-full h-48 bg-gray-200 rounded-md mb-4"></div>
+                                <div class="w-full h-48 bg-gray-200 rounded-md mb-4 flex justify-center items-center">
+                                    <span class="text-gray-400 text-xl">Imagen no disponible</span>
+                                </div>
                             {% endif %}
-                            
+        
                             <!-- Información de la propiedad -->
                             <h3 class="text-xl font-semibold text-gray-800">{{ property.type }} en {{ property.city }}</h3>
                             <p class="text-gray-600 text-sm">{{ property.address }}</p>
                             <p class="text-gray-500 text-sm">{{ property.description | truncate(100) }}...</p>
-                            
+        
                             <!-- Precio -->
                             <p class="text-xl font-bold text-gray-800 mt-2">${{ property.price }}</p>
-
+        
                             <!-- Botón para ver detalles -->
                             <a href="{{ url_for('main.edit_property', property_id=property.id) }}" class="text-blue-500 hover:text-blue-700 mt-4 inline-block">Editar</a>
-
+        
+                            <!-- Formulario para subir imagen -->
+                            <form action="{{ url_for('main.upload_image', property_id=property.id) }}" method="POST" enctype="multipart/form-data" class="mt-4 space-y-4 p-4 bg-gray-100 rounded-lg shadow-md">
+                                <h3 class="text-xs font-semibold text-gray-800">Subir Imagen</h3>
+        
+                                <!-- Contenedor para el input de archivo -->
+                                <div class="flex items-center space-x-2">
+                                    <label for="image" class="text-xs text-gray-700">Seleccionar imagen:</label>
+                                    <input type="file" name="image" id="image" accept="image/*" class="p-2 text-xs bg-white border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 w-40">
+                                </div>
+        
+                                <!-- Botón de enviar -->
+                                <div class="mt-4">
+                                    <button type="submit" class="w-full py-2 px-4 bg-blue-600 text-white text-xs font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out">
+                                        Subir Imagen
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     {% endfor %}
                 </div>
@@ -82,6 +101,8 @@
                 <p>No tienes propiedades registradas aún.</p>
             {% endif %}
         </main>
+        
+        
     </div>
 
 </body>
