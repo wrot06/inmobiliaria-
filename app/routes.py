@@ -10,7 +10,7 @@ import requests
 from app import db
 from flask import Blueprint, render_template, session, redirect, url_for, flash
 from app import db  # Importa db aquí, después de que la app se haya inicializado
-from app.models import Property, Photo
+from app.models import Property, Photo, Visit
 from functools import wraps
 from types import SimpleNamespace
 from flask import (
@@ -21,6 +21,7 @@ import base64
 from PIL import Image
 from io import BytesIO
 import time
+from datetime import datetime
 
 # Se define el blueprint para agrupar las rutas
 main = Blueprint('main', __name__)
@@ -261,6 +262,38 @@ def tenant_dashboard():
 
 
 
+@main.route('/property/<int:property_id>', methods=['GET'])
+def property_mirror(property_id):
+    # Verificar que el usuario esté autenticado (opcional, según tus requerimientos)
+    if 'token' not in session:
+        flash("Debes iniciar sesión para ver los detalles de la propiedad.", "error")
+        return redirect(url_for('main.login'))
+    
+    try:
+        # Buscar la propiedad en la base de datos por su ID
+        property = Property.query.get(property_id)
+
+        # Si no se encuentra la propiedad, redirigir al dashboard
+        if not property:
+            flash("Propiedad no encontrada", "error")
+            return redirect(url_for('main.tenant_dashboard'))
+        
+        # Obtener las fotos de la propiedad (si hay)
+        photos = Photo.query.filter_by(property_id=property.id).all()
+
+        return render_template('property_mirror.html', property=property, photos=photos)
+    except Exception as e:
+        flash(f"Error al obtener los detalles de la propiedad: {str(e)}", "error")
+        return redirect(url_for('main.tenant_dashboard'))
+
+
+
+# Ruta para comprar la propiedad
+@main.route('/buy-property/<int:property_id>', methods=['GET'])
+def buy_property(property_id):
+    # Lógica para iniciar el proceso de compra
+    # Podrías mostrar una vista con los detalles de la compra o redirigir a una página de pago
+    return render_template('buy_property.html', property_id=property_id)
 
 
 
@@ -282,6 +315,50 @@ def search_inmuebles():
 
     inmuebles = response.json()  # Suponiendo que la API devuelve los inmuebles en formato JSON
     return render_template('search_results.html', inmuebles=inmuebles)
+
+
+# RUTA PARA AGENDAR VISITA
+@main.route('/schedule-visit/<int:property_id>', methods=['GET', 'POST'])
+def schedule_visit(property_id):
+    if 'token' not in session or session.get('role') != 'Tenant':
+        flash("Acceso denegado. Debes ser un inquilino.", "error")
+        return redirect(url_for('main.login'))
+    
+    property = Property.query.get(property_id)
+    if not property:
+        flash("Propiedad no encontrada.", "error")
+        return redirect(url_for('main.owner_dashboard'))
+
+    if request.method == 'POST':
+        # Obtener la propuesta de fecha y hora de la visita
+        proposed_time = request.form['proposed_time']  # 'YYYY-MM-DDTHH:MM' formato
+        proposed_time = datetime.strptime(proposed_time, "%Y-%m-%dT%H:%M")
+
+        # Verificar que la propuesta esté dentro del horario laboral
+        if proposed_time.hour < 9 or proposed_time.hour >= 18:
+            flash("La visita debe ser agendada dentro del horario laboral (9 AM a 6 PM).", "error")
+            return redirect(url_for('main.schedule_visit', property_id=property.id))
+        
+        # Crear la visita
+        visit = Visit(
+            tenant_id=session['user_id'],
+            property_id=property_id,
+            proposed_time=proposed_time,
+            status="Pendiente"
+        )
+        try:
+            db.session.add(visit)
+            db.session.commit()
+            flash("La visita ha sido propuesta exitosamente.", "success")
+            return redirect(url_for('main.owner_dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error al agendar la visita: {str(e)}", "error")
+            return redirect(url_for('main.schedule_visit', property_id=property.id))
+    
+    # Si es GET, mostrar el formulario de agendamiento
+    return render_template('schedule_visit.html', property=property)
+
 
 # -------------------------------------------------------------------
 # RUTA DE REGISTRO DE USUARIO
@@ -391,6 +468,51 @@ def edit_property(property_id):
 
 
 
+@main.route('/accept-visit/<int:visit_id>', methods=['POST'])
+def accept_visit(visit_id):
+    # Verificar que el usuario sea el propietario
+    if 'token' not in session or session.get('role') != 'Owner':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('main.login'))
+
+    visit = Visit.query.get(visit_id)
+    if not visit:
+        flash("Visita no encontrada.", "error")
+        return redirect(url_for('main.owner_dashboard'))
+
+    # Aceptar la visita
+    visit.status = 'Aceptada'
+    try:
+        db.session.commit()
+        flash("Visita aceptada exitosamente.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al aceptar la visita: {str(e)}", "error")
+
+    return redirect(url_for('main.owner_dashboard'))
+
+@main.route('/reject-visit/<int:visit_id>', methods=['POST'])
+def reject_visit(visit_id):
+    # Verificar que el usuario sea el propietario
+    if 'token' not in session or session.get('role') != 'Owner':
+        flash("Acceso denegado.", "error")
+        return redirect(url_for('main.login'))
+
+    visit = Visit.query.get(visit_id)
+    if not visit:
+        flash("Visita no encontrada.", "error")
+        return redirect(url_for('main.owner_dashboard'))
+
+    # Rechazar la visita
+    visit.status = 'Rechazada'
+    try:
+        db.session.commit()
+        flash("Visita rechazada.", "info")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al rechazar la visita: {str(e)}", "error")
+
+    return redirect(url_for('main.owner_dashboard'))
 
 
 
