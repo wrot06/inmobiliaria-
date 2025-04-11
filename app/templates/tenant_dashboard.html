@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Visitante</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-md p-6 hidden md:block">
+        <h2 class="text-xl font-bold text-blue-600 mb-6">🏢 Inmobiliaria</h2>
+        <nav class="space-y-4">
+            {% if role == "Owner" %}
+                <a href="#" class="block text-gray-700 hover:text-blue-500">🏠 Propiedades</a>
+                <a href="#" class="block text-gray-700 hover:text-blue-500">📅 Reservas</a>
+                <a href="#" class="block text-gray-700 hover:text-blue-500">💰 Pagos</a>
+            {% elif role == "Tenant" %}
+                <a href="#" class="block text-gray-700 hover:text-blue-500">📄 Mis Contratos</a>
+                <a href="#" class="block text-gray-700 hover:text-blue-500">🏘 Propiedades en arriendo</a>
+                <a href="#" class="block text-gray-700 hover:text-blue-500">💳 Mis Pagos</a>
+            {% endif %}
+        </nav>
+        
+    </aside>
+
+    <!-- Main content -->
+    <div class="flex-1 flex flex-col">
+
+        <!-- Header -->
+        <header class="bg-white shadow flex items-center justify-between px-6 py-4">
+            <h1 class="text-xl font-semibold text-gray-700">Panel de control</h1>
+
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <span class="text-gray-600 font-medium">
+                        {{ user_name }} <span class="text-sm text-gray-400">({{ role_display }})</span>
+                    </span>
+                    <img src="{{ url_for('static', filename='img/user.jpg') }}" alt="User" class="w-10 h-10 rounded-full object-cover border">
+                </div>
+                <!-- Botón salir -->
+                <form action="{{ url_for('main.logout') }}" method="POST">
+                    <button type="submit"
+                            class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-all text-sm">
+                        Salir
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-6 overflow-auto">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold text-gray-800">Bienvenido, {{ user_name }} 👋</h2>
+                <p class="text-gray-600 mt-2">Aquí podrás administrar tus propiedades, reservas, clientes y más.</p>
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>

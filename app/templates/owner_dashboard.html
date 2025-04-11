@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Propietario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-md p-6">
+        <h2 class="text-xl font-bold text-blue-600 mb-6">🏢 Inmobiliaria</h2>
+        <nav class="space-y-4">
+
+                <!-- Menú de opciones para el propietario -->
+                <a href="{{ url_for('main.owner_create_property') }}" class="block text-gray-700 hover:text-blue-500">🏠 Agregar Propiedad</a>
+                <a href="#" class="block text-gray-700 hover:text-blue-500">📑 Solicitudes</a>
+                <a href="#" class="block text-gray-700 hover:text-blue-500">💳 Pagos</a>
+
+        </nav>
+    </aside>
+
+    <!-- Main content -->
+    <div class="flex-1 flex flex-col">
+
+        <!-- Header -->
+        <header class="bg-white shadow flex items-center justify-between px-6 py-4">
+            <h1 class="text-xl font-semibold text-gray-700">Panel de control</h1>
+
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <span class="text-gray-600 font-medium">
+                        {{ user_name }} <span class="text-sm text-gray-400">({{ role_display }})</span>
+                    </span>
+                    <img src="{{ url_for('static', filename='img/user.jpg') }}" alt="User" class="w-10 h-10 rounded-full object-cover border">
+                </div>
+                <!-- Botón salir -->
+                <form action="{{ url_for('main.logout') }}" method="POST">
+                    <button type="submit"
+                            class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-all text-sm">
+                        Salir
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-6 overflow-auto space-y-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold text-gray-800">Bienvenido, {{ user_name }} 👋</h2>
+                <p class="text-gray-600 mt-2">Aquí podrás administrar tus propiedades, solicitudes y pagos.</p>
+            </div>
+
+            <h2 class="text-2xl font-semibold text-gray-800">Tus Propiedades</h2>
+
+            {% if propiedades %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {% for property in propiedades %}
+                        <div class="bg-white p-4 rounded-lg shadow-md hover:shadow-xl transition-all">
+                            <!-- Imágen de la propiedad -->
+                            {% if property.photos %}
+                                <img src="{{ property.photos[0].url }}" alt="Foto de la propiedad" class="w-full h-48 object-cover rounded-md mb-4">
+                            {% else %}
+                                <div class="w-full h-48 bg-gray-200 rounded-md mb-4"></div>
+                            {% endif %}
+                            
+                            <!-- Información de la propiedad -->
+                            <h3 class="text-xl font-semibold text-gray-800">{{ property.type }} en {{ property.city }}</h3>
+                            <p class="text-gray-600 text-sm">{{ property.address }}</p>
+                            <p class="text-gray-500 text-sm">{{ property.description | truncate(100) }}...</p>
+                            
+                            <!-- Precio -->
+                            <p class="text-xl font-bold text-gray-800 mt-2">${{ property.price }}</p>
+
+                            <!-- Botón para ver detalles -->
+                            <a href="{{ url_for('main.edit_property', property_id=property.id) }}" class="text-blue-500 hover:text-blue-700 mt-4 inline-block">Editar</a>
+
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No tienes propiedades registradas aún.</p>
+            {% endif %}
+        </main>
+    </div>
+
+</body>
+</html>

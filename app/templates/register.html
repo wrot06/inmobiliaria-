@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-96 text-center">
+        <!-- Logo -->
+        <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Logo" class="w-24 h-24 mx-auto mb-4 rounded-full shadow-md">
+
+        <!-- Título -->
+        <h2 class="text-2xl font-bold mb-4 text-gray-700">Crear una cuenta</h2>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <p class="text-red-500 text-sm mb-2">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        <!-- Formulario -->
+        <form method="POST" class="space-y-4">
+            <div>
+                <input type="text" name="username" placeholder="Nombre de usuario" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
+            </div>        
+            <div>
+                <input type="email" name="email" placeholder="Correo electrónico" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
+            </div>        
+            <div>
+                <input type="text" name="phoneNumber" placeholder="Número de teléfono" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
+            </div>        
+            <div>
+                <input type="password" name="password" placeholder="Contraseña" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
+            </div>        
+            <div>
+                <select name="role" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 text-gray-700">
+                    <option value="" disabled selected>Selecciona un rol</option>
+                    <option value="Owner">Propietario</option>
+                    <option value="Tenant">Solicitante</option>
+                </select>
+            </div>        
+            <button type="submit"
+                    class="w-full bg-green-600 text-white font-semibold py-3 rounded-lg hover:bg-green-700 transition-all duration-200">
+                Registrarse
+            </button>
+        </form>
+        
+
+        <!-- Enlace para volver a login -->
+        <p class="mt-6 text-sm text-gray-600">
+            ¿Ya tienes una cuenta?
+            <a href="{{ url_for('main.login') }}" class="text-blue-500 hover:underline">Inicia sesión</a>
+        </p>
+    </div>
+</body>
+</html>
